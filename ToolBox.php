@@ -19,7 +19,7 @@ final class ToolBox {
     public static function UpFirstLetter(string $value, bool $allWords = false): string {
         return ($allWords)
             ? ucwords(strtolower($value)) // Met en minuscule toute la chaîne, puis met en majuscule chaque mot.
-            : ucfirst(strtolower($value)); // Met en minuscule toute la chaîne, puis met en majuscule uniquement la première lettre.
+            : ucfirst($value); // Met en majuscule uniquement la première lettre.
     }
 
     /**
