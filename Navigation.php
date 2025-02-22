@@ -16,7 +16,7 @@ class Navigation {
     private ?string $filesDir = null; // Dossier contenant les fichiers de navigation (ex: 'pages/')
     private ?string $mainFilename = null; // Nom du fichier principal à charger (ex: 'login.php')
     private string $mainFilepath; // Chemin complet du fichier principal
-    private string $defaultMainFilePath; // Chemin complet par défaut du fichier principal
+    private string $defaultMainFileName; // Chemin complet par défaut du fichier principal
 
     private static string $rootpath; // Chemin racine du projet (statique, partagé entre toutes les instances)
 
@@ -28,10 +28,10 @@ class Navigation {
      * @param string $defaultMainFilename Nom du fichier principal par défaut (ex: 'index').
      */
     public function __construct(string $mainFilenameKey, string $filesDir, string $defaultMainFilename) {
-        $this->setMainFileName($mainFilenameKey); // Détermine le fichier principal en fonction de la requête
+        $this->setDefaultMainFilename($defaultMainFilename); // Définit le fichier principal par défaut
+        $this->setMainFilename($mainFilenameKey); // Détermine le fichier principal en fonction de la requête
         $this->setFilesDir($filesDir); // Définit le dossier contenant les fichiers
-        $this->setDefaultMainFilePath($defaultMainFilename); // Définit le fichier principal par défaut
-        $this->setMainFilePath(); // Construit le chemin complet du fichier principal
+        $this->setMainFilepath(); // Construit le chemin complet du fichier principal
     }
 
     /** REGION SETTERS **/
@@ -41,12 +41,12 @@ class Navigation {
      *
      * @param string $mainFilenameKey Clé permettant d'obtenir le fichier via la requête HTTP.
      */
-    private function setMainFileName(string $mainFilenameKey): void {
+    private function setMainFilename(string $mainFilenameKey): void {
         // Vérifie si la clé est valide avec WShield (ex: éviter les caractères interdits)
         if (WShield::IsValidString($mainFilenameKey)) {
             // Récupère le nom du fichier à partir de la requête HTTP (GET ou POST)
             // Si la clé n'existe pas, on utilise le fichier par défaut
-            $this->mainFilename = ToolBox::getHTTPRequestByTag($mainFilenameKey, $this->defaultMainFilePath);
+            $this->mainFilename = ToolBox::getHTTPRequestByTag($mainFilenameKey, $this->defaultMainFileName);
         }
     }
 
@@ -64,23 +64,28 @@ class Navigation {
     /**
      * Construit le chemin absolu du fichier par défaut à exécuter
      *
-     * @param string $defaultMainFilePath Nom du fichier par défaut (ex: 'home').
+     * @param string $defaultMainFileName Nom du fichier par défaut (ex: 'home').
      */
-    private function setDefaultMainFilePath(string $defaultMainFilePath): void {
+    private function setDefaultMainFilename(string $defaultMainFileName): void {
         // Vérifie si le nom est valide avant de l'affecter
-        if (!is_null($this->filesDir) && WShield::IsValidString($defaultMainFilePath))
-            $this->defaultMainFilePath = self::getRootPath() . "/$this->filesDir/$defaultMainFilePath.php";
+        if (WShield::IsValidString($defaultMainFileName))
+            $this->defaultMainFileName = $defaultMainFileName;
     }
 
     /**
      * Construit le chemin absolu du fichier principal à exécuter.
      */
-    private function setMainFilePath(): void {
-        $filepath = ''; // Initialise une variable vide pour stocker le chemin
+    private function setMainFilepath(): void {
+        $filepath = self::getRootPath(); // Initialise une variable vide pour stocker le chemin
 
         // Vérifie si le dossier et le nom de fichier sont définis
-        if (!is_null($this->filesDir) && !is_null($this->mainFilename))
-            $filepath = self::getRootPath() . "/$this->filesDir/$this->mainFilename.php";
+        if (!is_null($this->filesDir))
+            $filepath .= "/$this->filesDir";
+
+        if (!is_null($this->mainFilename))
+            $filepath .= "/$this->mainFilename.php";
+        else
+            $filepath .= "/$this->defaultMainFileName.php";
 
         // Vérifie si le fichier existe, sinon génère une erreur critique
         if (empty($filepath) || !file_exists($filepath))
@@ -144,7 +149,7 @@ class Navigation {
      * @return string Nom du fichier par défaut.
      */
     public function getDefaultMainFileName(): string {
-        return $this->defaultMainFilePath;
+        return $this->defaultMainFileName;
     }
 
     /**
